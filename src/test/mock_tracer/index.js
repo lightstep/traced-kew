@@ -6,4 +6,4 @@ export {
     MockTracer,
     MockSpan,
     MockContext,
-}
+};

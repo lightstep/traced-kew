@@ -3,8 +3,8 @@ import Tracer from 'opentracing';
 
 function _randomGUID() {
     return [
-        `00000000${((Math.random() * 0xFFFFFFFF)|0).toString(16)}`.substr(-8),
-        `00000000${((Math.random() * 0xFFFFFFFF)|0).toString(16)}`.substr(-8),
+        `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
+        `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
     ].join('');
 }
 
@@ -127,7 +127,7 @@ export default class TracedKew {
     }
 
     static bindPromise(f, scope, ...boundArgs) {
-        return function() {
+        return function () {
             let defer = TracedKew.defer();
             let thisArgs = Array.prototype.slice.call(arguments);
             try {
@@ -136,7 +136,7 @@ export default class TracedKew {
                 defer.reject(e);
             }
             return defer;
-        }
+        };
     }
 
     static defer(...args) {
@@ -209,7 +209,7 @@ export default class TracedKew {
         return Q.getNextTickFunction(...args);
     }
 
-    static setNextTickFunction() {
+    static setNextTickFunction(...args) {
         return Q.setNextTickFunction(...args);
     }
 
@@ -256,7 +256,7 @@ export default class TracedKew {
             } else {
                 this.resolve(data);
             }
-        }
+        };
     }
 
     spread(...args) {

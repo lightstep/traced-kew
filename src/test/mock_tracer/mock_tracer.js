@@ -1,4 +1,4 @@
-import opentracing from 'opentracing';
+import { MockSpan } from './mock_span';
 
 /**
  * OpenTracing Tracer implementation designed for use in
@@ -55,7 +55,7 @@ export default class MockTracer {
         this._flushCb(spans);
 
         if (callback) {
-            cb(null);
+            callback(null);
         }
     }
 

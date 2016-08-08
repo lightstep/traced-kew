@@ -1,13 +1,13 @@
 {
   "name": "traced-kew",
-  "main": "lib/traced_kew.js",
+  "main": "lib/index.js",
   "version": "0.1.1",
   "dependencies": {
     "chai": "^3.5.0",
     "kew": "^0.7.0",
-    "lightstep-tracer": "^0.11.10",
+    "lightstep-tracer": "0.11.x",
     "mocha": "^2.5.3",
-    "opentracing": "^0.11.1"
+    "opentracing": "0.11.x"
   },
   "devDependencies": {
     "babel-cli": "^6.10.1",
