@@ -1,3 +1,4 @@
+import opentracing from 'opentracing';
 import MockContext from './mock_context';
 
 /**

@@ -56,16 +56,16 @@ Q.tracedAll(span, [
     mockAsyncOperation(100, span),
     mockAsyncOperation(125, span),
 ])
-    .spread((span, result1, result2) => {
+    .tracedSpread((span, result1, result2) => {
         console.log(`Ok: ${result1} ${result2}`);
         return mockAsyncOperation(40);
     })
     .tracedThen((span) => {
-        span.setOperationName('nested')
+        span.setOperationName('nested');
         return Q.tracedAll(span, [
             mockAsyncOperation(8, span, shouldFail),
             mockAsyncOperation(18, span),
-            mockAsyncOperation(12, span)
+            mockAsyncOperation(12, span),
         ]);
     })
     .tracedThen((span, result) => {

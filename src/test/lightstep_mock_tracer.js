@@ -1,7 +1,5 @@
 import { MockTracer, MockSpan } from './mock_tracer';
 
-console.log(require('./mock_tracer'))
-
 /**
  * Extend the MockSpan to include LightStep-specific API implementations
  */

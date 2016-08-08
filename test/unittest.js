@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const opentracing = require('opentracing');
 const MockTracer = require('../lib/test/lightstep_mock_tracer.js').LightStepMockTracer;
-const Q = require('..').default;
+const Q = require('..');
 const kew = require('kew');
 
 require('source-map-support').install();
@@ -363,7 +363,7 @@ describe('Traced API', function() {
             const start = Date.now();
             Q.tracedDelay('delay', null, 5)
                 .tracedThen((span) => {
-                    expect(Date.now() - start).to.be.gt(5);
+                    expect(Date.now() - start).to.be.gte(5);
                     done();
                 })
                 .fail((err) => {
@@ -507,5 +507,15 @@ describe('Traced API', function() {
                 })
                 .finish();
         });
+    });
+});
+
+describe('Miscellanesous', function() {
+    it('should import correctly with require', function() {
+        const requireTQ = require('..');
+        expect(requireTQ).to.be.a('function');
+
+        const requireTQDefault = require('..').default
+        expect(requireTQDefault).to.be.a('function');
     });
 });
