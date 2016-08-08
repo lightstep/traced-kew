@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 const opentracing = require('opentracing');
-const MockTracer = require('../lib/test/lightstep_mock_tracer.js').LightStepMockTracer;
+const MockTracer = require('../lib/test/lightstep_mock_tracer.js');
 const Q = require('..');
 const kew = require('kew');
 

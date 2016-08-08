@@ -1,11 +1,10 @@
-/* eslint-disable no-console, no-shadow */
-
-//import * as Q from 'kew';
-import Q from '../..';
-
+/* eslint-disable no-console, no-shadow, import/no-extraneous-dependencies */
 import Tracer from 'opentracing';
 import LightStep from 'lightstep-tracer/dist/lightstep-tracer-node-debug.js';
 import shelljs from 'shelljs';
+
+//import * as Q from 'kew';
+import Q from '../..';
 
 require('source-map-support').install();
 

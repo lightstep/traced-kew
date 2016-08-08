@@ -31,8 +31,11 @@ class LightStepMockSpan extends MockSpan {
 /**
  * Extend the MockTracer to include LightStep-specific API implementations
  */
-export class LightStepMockTracer extends MockTracer {
+export default class LightStepMockTracer extends MockTracer {
     _allocSpan(fields) {
         return new LightStepMockSpan(this);
     }
 }
+
+// Workaround to avoid require('package').default in ES5.
+module.exports = module.exports.default;
