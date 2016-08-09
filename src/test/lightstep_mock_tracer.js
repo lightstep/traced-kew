@@ -46,6 +46,8 @@ export default class LightStepMockTracer extends MockTracer {
      * join ID relationships from a MockTracer report.
      */
     generateDotFile(filename, report) {
+        report = report || this.report();
+
         let vertices = [];
         let edges = [];
         let joinSets = {};
@@ -58,6 +60,12 @@ export default class LightStepMockTracer extends MockTracer {
                 duration = `${duration}ms`;
             }
             let label = `${span._operationName}\n${span.uuid()}\n${duration}`;
+            _.each(span._tags, (val, key) => {
+                if (key.match(/^join:/)) {
+                    return;
+                }
+                label += `\n${key}=${val}`;
+            });
             vertices.push(`S${span.uuid()} [label="${label}",color="${color}"];`);
 
             _.each(span._tags, (val, key) => {

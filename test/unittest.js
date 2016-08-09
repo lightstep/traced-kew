@@ -513,7 +513,7 @@ describe('Traced API', function() {
                 .finish();
         });
 
-        it('should upgrade ES6 promises in a chain', function(done) {
+        it('should upgrade promises in a chain', function(done) {
             Q.all([ Q.delay(1)])
                 .tracedThen((span, result) => {
                     span.setTag('label', 'A');
@@ -521,15 +521,15 @@ describe('Traced API', function() {
                 })
                 .tracedThen((span, result) => {
                     span.setTag('label', 'B');
-                    return Promise.resolve(result + 1);
+                    return kew.resolve(result + 1);
                 })
                 .tracedThen((span, result) => {
                     span.setTag('label', 'C');
-                    return Promise.resolve(result * 10);
+                    return Q.resolve(result * 10);
                 })
                 .tracedThen((span, result) => {
                     span.setTag('label', 'D');
-                    return Promise.resolve(result + 7);
+                    return kew.resolve(result + 7);
                 })
                 .tracedThen((span, result) => {
                     span.setTag('label', 'E');
