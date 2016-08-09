@@ -542,7 +542,7 @@ describe('Traced API', function() {
                 .finish();
         });
 
-        it.only('should support nested chains', function(done) {
+        it('should support nested chains', function(done) {
             Q.delay(2)
                 .then(()=> {
                     return Q.tracedDelay('ABC', null, 2)
