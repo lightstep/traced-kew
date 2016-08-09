@@ -59,7 +59,7 @@ export default class LightStepMockTracer extends MockTracer {
             } else {
                 duration = `${duration}ms`;
             }
-            let label = `${span._operationName}\n${span.uuid()}\n${duration}`;
+            let label = `${span._operationName}\n${duration}`;
             _.each(span._tags, (val, key) => {
                 if (key.match(/^join:/)) {
                     return;
