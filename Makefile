@@ -20,6 +20,10 @@ demo-ok: build
 demo-fail: build
 	node lib/examples/demo.js fail
 
+.PHONY: example-delays
+example-delays: build
+	node lib/examples/example-delays.js
+
 #
 # build the ES6 JavaScript files and generate source maps
 #
