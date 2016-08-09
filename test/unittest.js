@@ -513,7 +513,7 @@ describe('Traced API', function() {
                 .finish();
         });
 
-        it.only('should upgrade ES6 promises in a chain', function(done) {
+        it('should upgrade ES6 promises in a chain', function(done) {
             Q.all([ Q.delay(1)])
                 .tracedThen((span, result) => {
                     span.setTag('label', 'A');
