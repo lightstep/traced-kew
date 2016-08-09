@@ -1,4 +1,9 @@
+/* eslint-disable import/no-extraneous-dependencies */
+
+import fs from 'fs';
+import _ from 'underscore';
 import { MockTracer, MockSpan } from './mock_tracer';
+
 
 /**
  * Extend the MockSpan to include LightStep-specific API implementations
@@ -34,6 +39,61 @@ class LightStepMockSpan extends MockSpan {
 export default class LightStepMockTracer extends MockTracer {
     _allocSpan(fields) {
         return new LightStepMockSpan(this);
+    }
+
+    /**
+     * Generates a DOT file (http://www.graphviz.org/) for visualizing the
+     * join ID relationships from a MockTracer report.
+     */
+    generateDotFile(filename, report) {
+        report = report || this.report();
+
+        let vertices = [];
+        let edges = [];
+        let joinSets = {};
+        _.each(report.spans, (span) => {
+            let color = span._finishMs === 0 ? 'red' : 'black';
+            let duration = span._finishMs - span._startMs;
+            if (duration < 0) {
+                duration = 'unfinished';
+            } else {
+                duration = `${duration}ms`;
+            }
+            let label = `${span._operationName}\n${span.uuid()}\n${duration}`;
+            _.each(span._tags, (val, key) => {
+                if (key.match(/^join:/)) {
+                    return;
+                }
+                label += `\n${key}=${val}`;
+            });
+            vertices.push(`S${span.uuid()} [label="${label}",color="${color}"];`);
+
+            _.each(span._tags, (val, key) => {
+                if (!key.match(/^join:/)) {
+                    return;
+                }
+                let setKey = `${key}|${val}`;
+                joinSets[setKey] = joinSets[setKey] || {};
+                joinSets[setKey][span.uuid()] = true;
+            });
+        });
+        _.each(joinSets, (set, key) => {
+            let uuids = _.keys(set);
+            for (let i = 0; i < uuids.length; i++) {
+                for (let j = i + 1; j < uuids.length; j++) {
+                    edges.push(`S${uuids[i]} -- S${uuids[j]};`);
+                }
+            }
+        });
+
+        let preface = [
+            'graph {',
+        ];
+        let suffix = [
+            '}',
+        ];
+        console.log(`Writing DOT graph to '${filename}'`);  // eslint-disable-line
+        fs.writeFileSync(filename, preface.concat(vertices, edges, suffix).join('\n'));
     }
 }
 

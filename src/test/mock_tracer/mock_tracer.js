@@ -1,4 +1,5 @@
-import { MockSpan } from './mock_span';
+import MockSpan from './mock_span';
+import Report from './report';
 
 /**
  * OpenTracing Tracer implementation designed for use in
@@ -21,13 +22,16 @@ export default class MockTracer {
         const span = this._allocSpan(fields);
 
         span.setOperationName(fields.operationName);
-        this._spansByUUID[span.uuid()] = span;
+        this._spans.push(span);
 
         if (fields.references) {
             for (let i = 0; i < fields.references; i++) {
                 span.addReference(fields.references[i]);
             }
         }
+
+        // Capture the stack at the time the span started
+        span._startStack = new Error().stack;
 
         return span;
     }
@@ -41,19 +45,7 @@ export default class MockTracer {
     }
 
     flush(callback) {
-        const keys = Object.keys(this._spansByUUID);
-        const spans = new Array(keys.length);
-        for (let i = 0; i < keys.length; i++) {
-            spans[i] = this._spansByUUID[keys[i]];
-        }
-        this._spansByUUID = {};
-
-        // The _flushCb is a MockTracer specific hook to get the collected
-        // data. The callback passed into the function is the OpenTracing API
-        // callback which simply signifies when the flush has completed (and
-        // whether there was an error or not).
-        this._flushCb(spans);
-
+        this.clear();
         if (callback) {
             callback(null);
         }
@@ -63,14 +55,27 @@ export default class MockTracer {
     // MockTracer-specific
     //------------------------------------------------------------------------//
 
-    constructor({ flush }) {
+    constructor() {
         this._tracerInterface = null;
-
-        this._spansByUUID = {};
-        this._flushCb = flush || function () {};
+        this._spans = [];
     }
 
     _allocSpan() {
         return new MockSpan(this);
+    }
+
+    /**
+     * Discard any buffered data.
+     */
+    clear() {
+        this._spans = [];
+    }
+
+    /**
+     * Return the buffered data in a format convenient for making unit test
+     * assertions.
+     */
+    report() {
+        return new Report(this._spans);
     }
 }

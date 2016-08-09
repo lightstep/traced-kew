@@ -1,10 +1,12 @@
+/* eslint-disable no-use-before-define */
+
 import * as Q from 'kew';
 import Tracer from 'opentracing';
 
 function _randomGUID() {
     return [
-        `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
-        `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
+        `00000000${Math.abs((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
+        `00000000${Math.abs((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8),
     ].join('');
 }
 
@@ -22,6 +24,45 @@ function _joinSpans(parent, child) {
     const joinValue = _randomGUID();
     parent.setTag(joinKey, joinValue);
     child.setTag(joinKey, joinValue);
+}
+
+
+function _linkChildren(span, promises) {
+    const spanImp = span.imp();
+    const joinValue = _randomGUID();
+    const joinKey = _joinKey();
+    span.setTag(joinKey, joinValue);
+
+    // Loop through the children and retroactively link them to  span for
+    // the "all" operation. Also back date the parent to the oldest child.
+    // This is LightStep-specific.
+    const children = promises;
+    let beginMicros = span.imp().beginMicros();
+    for (let i = 0; i < children.length; i++) {
+        let child = children[i];
+        if (!(child instanceof TracedKew)) {
+            continue;
+        }
+        const childSpan = child.span();
+        if (!childSpan) {
+            continue;
+        }
+        childSpan.setTag(joinKey, joinValue);
+
+        const childBeginMicros = childSpan.imp().beginMicros();
+        beginMicros = Math.min(childBeginMicros, beginMicros);
+    }
+    spanImp.setBeginMicros(beginMicros);
+}
+
+function _wrap(prev, result) {
+    if (result instanceof Promise) {
+        return new TracedKew({
+            chain   : prev._chain,
+            promise : result,
+        });
+    }
+    return result;
 }
 
 /**
@@ -88,38 +129,20 @@ export default class TracedKew {
     //------------------------------------------------------------------------//
 
     static all(promises) {
-        return new TracedKew({ promise : Q.all(promises) });
+        const span = Tracer.startSpan('all');
+        let p = Q.all(promises);
+        p.fin(() => {
+            _linkChildren(span, promises);
+            span.finish();
+        });
+        return new TracedKew({
+            chain   : new SpanChain(span),
+            promise : p,
+        });
     }
 
     static tracedAll(span, promises) {
-        // Create a span to encapsulate the promises passed to all()
-        //const span = Tracer.startSpan(name);
-        const spanImp = span.imp();
-        const joinValue = _randomGUID();
-        const joinKey = _joinKey();
-        span.setTag(joinKey, joinValue);
-
-        // Loop through the children and retroactively link them to  span for
-        // the "all" operation. Also back date the parent to the oldest child.
-        // This is LightStep-specific.
-        const children = promises;
-        let beginMicros = span.imp().beginMicros();
-        for (let i = 0; i < children.length; i++) {
-            let child = children[i];
-            if (!(child instanceof TracedKew)) {
-                continue;
-            }
-            const childSpan = child.span();
-            if (!childSpan) {
-                continue;
-            }
-            childSpan.setTag(joinKey, joinValue);
-
-            const childBeginMicros = childSpan.imp().beginMicros();
-            beginMicros = Math.min(childBeginMicros, beginMicros);
-        }
-        spanImp.setBeginMicros(beginMicros);
-
+        _linkChildren(span, promises);
         return new TracedKew({
             chain   : new SpanChain(span),
             promise : Q.all(promises),
@@ -151,8 +174,12 @@ export default class TracedKew {
         });
     }
 
-    static delay(...args) {
-        return new TracedKew({ promise : Q.delay(...args) });
+    static delay(ms) {
+        const span = Tracer.startSpan('delay');
+        return new TracedKew({
+            chain   : new SpanChain(span),
+            promise : Q.delay(ms),
+        });
     }
 
     static tracedDelay(name, parent, ms) {
@@ -299,7 +326,8 @@ export default class TracedKew {
     }
 
     tracedThen(...args) {
-        args[0] = this._linkSpan('traceThen', true, false, args[0]);
+        // Modify the callback that gets invoked
+        args[0] = this._linkSpan('tracedThen', true, false, args[0]);
         return new TracedKew({
             chain   : this._chain,
             promise : this._promise.then(...args),
@@ -399,8 +427,9 @@ export default class TracedKew {
             if (traced) {
                 args = [ nextSpan ].concat(Array.prototype.slice.call(arguments));
             }
-            // The "this" here is intentionally not "self"
-            return f.apply(this, args);
+
+            // NOTE: the "this" and "self" are different objects
+            return _wrap(self, f.apply(this, args));
         };
     }
 
