@@ -56,6 +56,10 @@ function _linkChildren(span, promises) {
 }
 
 function _wrap(prev, result) {
+    if (result instanceof TracedKew) {
+        _joinSpans(prev.span(), result.span());
+        return result;
+    }
     if (result instanceof Promise) {
         return new TracedKew({
             chain   : prev._chain,
@@ -174,19 +178,19 @@ export default class TracedKew {
         });
     }
 
-    static delay(ms) {
+    static delay(...args) {
         const span = Tracer.startSpan('delay');
         return new TracedKew({
             chain   : new SpanChain(span),
-            promise : Q.delay(ms),
+            promise : Q.delay(...args),
         });
     }
 
-    static tracedDelay(name, parent, ms) {
+    static tracedDelay(name, parent, ...args) {
         const span = Tracer.startSpan(`${name}`, { childOf : parent });
         return new TracedKew({
             chain   : new SpanChain(span),
-            promise : Q.delay(ms),
+            promise : Q.delay(...args),
         });
     }
 
@@ -348,11 +352,7 @@ export default class TracedKew {
                 cb(span);
             }
         });
-
-        // The "chain" was ended by the finish call, don't set it.
-        return new TracedKew({
-            promise : this._promise,
-        });
+        return this;
     }
 
     /**

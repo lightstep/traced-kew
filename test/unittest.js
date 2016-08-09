@@ -541,6 +541,28 @@ describe('Traced API', function() {
                 })
                 .finish();
         });
+
+        it.only('should support nested chains', function(done) {
+            Q.delay(2)
+                .then(()=> {
+                    return Q.tracedDelay('ABC', null, 2)
+                        .then(() => Q.tracedDelay('A', null, 2))
+                        .then(() => Q.tracedDelay('B', null, 1))
+                        .then(() => Q.tracedDelay('C', null, 4))
+                })
+                .then(()=> {
+                    return Q.delay(5)
+                        .then(() => Q.delay(2))
+                        .then(() => Q.delay(1))
+                        .then(() => Q.delay(4))
+                })
+                .then(() => {
+                    done();
+                })
+                .fail((err) => {
+                    done(new Error(err));
+                });
+        })
     });
 });
 
