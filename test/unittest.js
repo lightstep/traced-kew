@@ -6,7 +6,8 @@ const kew = require('kew');
 
 require('source-map-support').install();
 
-opentracing.initGlobalTracer(new MockTracer({}));
+const mockTracerImp = new MockTracer({});
+opentracing.initGlobalTracer(mockTracerImp);
 
 function promiseTimeout(ms, fail) {
     return new Promise((resolve, reject) => {
@@ -57,6 +58,10 @@ function tracedTimeout(ms, span, fail) {
 }
 
 describe('Standard kew API', function() {
+
+    beforeEach(function() {
+        mockTracerImp.clear();
+    });
 
     describe('All kew functions exist', function() {
         const funcNames = [
@@ -507,10 +512,43 @@ describe('Traced API', function() {
                 })
                 .finish();
         });
+
+        it.only('should upgrade ES6 promises in a chain', function(done) {
+            Q.all([ Q.delay(1)])
+                .tracedThen((span, result) => {
+                    span.setTag('label', 'A');
+                    return Promise.resolve(1);
+                })
+                .tracedThen((span, result) => {
+                    span.setTag('label', 'B');
+                    return Promise.resolve(result + 1);
+                })
+                .tracedThen((span, result) => {
+                    span.setTag('label', 'C');
+                    return Promise.resolve(result * 10);
+                })
+                .tracedThen((span, result) => {
+                    span.setTag('label', 'D');
+                    return Promise.resolve(result + 7);
+                })
+                .tracedThen((span, result) => {
+                    span.setTag('label', 'E');
+                    expect(result).to.eq(27);
+                    done();
+                })
+                .fail((err) => {
+                    done(new Error(err));
+                })
+                .finish();
+        });
     });
 });
 
 describe('Miscellanesous', function() {
+    beforeEach(function() {
+        mockTracerImp.clear();
+    });
+
     it('should import correctly with require', function() {
         const requireTQ = require('..');
         expect(requireTQ).to.be.a('function');

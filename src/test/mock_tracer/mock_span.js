@@ -1,4 +1,7 @@
+/* eslint-disable import/no-extraneous-dependencies */
+
 import opentracing from 'opentracing';
+import _ from 'underscore';
 import MockContext from './mock_context';
 
 /**
@@ -55,6 +58,11 @@ export default class MockSpan {
         this._childOf = null;
         this._children = [];
         this._followsFrom = null;
+
+        // Capture the stack at the time of startSpan.  Definitely too expensive
+        // to be doing in a production tracer, but convenient in the MockTracer
+        // for tracking down unfinished spans.
+        this._startStack = null;
     }
 
     uuid() {
@@ -62,8 +70,8 @@ export default class MockSpan {
     }
 
     _generateUUID() {
-        const p0 = `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8);
-        const p1 = `00000000${((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8);
+        const p0 = `00000000${Math.abs((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8);
+        const p1 = `00000000${Math.abs((Math.random() * 0xFFFFFFFF) | 0).toString(16)}`.substr(-8);
         return `${p0}${p1}`;
     }
 
@@ -79,5 +87,21 @@ export default class MockSpan {
         default:
             throw new Error(`Unknown reference type  ${ref.type()}`);
         }
+    }
+
+    /**
+     * Returns a simplified object better for console.log()'ing.
+     */
+    debug() {
+        let obj = {
+            uuid      : this._uuid,
+            operation : this._operationName,
+            millis    : [ this._finishMs - this._startMs, this._startMs, this._finishMs ],
+            childOf   : this._childOf,
+        };
+        if (_.size(this._tags)) {
+            obj.tags = this._tags;
+        }
+        return obj;
     }
 }
