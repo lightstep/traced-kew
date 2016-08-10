@@ -51,22 +51,30 @@ export default class LightStepMockTracer extends MockTracer {
         let vertices = [];
         let edges = [];
         let joinSets = {};
+        let offsetMs = report.minStartMs;
+
         _.each(report.spans, (span) => {
             let color = span._finishMs === 0 ? 'red' : 'black';
             let duration = span._finishMs - span._startMs;
+            let width = duration;
             if (duration < 0) {
                 duration = 'unfinished';
+                width = 0;
             } else {
-                duration = `${duration}ms`;
+                duration = [
+                    `${duration}ms`,
+                    `${span._startMs - offsetMs}-${span._finishMs - offsetMs}`,
+                ].join('\n');
             }
             let label = `${span._operationName}\n${duration}`;
+
             _.each(span._tags, (val, key) => {
                 if (key.match(/^join:/)) {
                     return;
                 }
                 label += `\n${key}=${val}`;
             });
-            vertices.push(`S${span.uuid()} [label="${label}",color="${color}"];`);
+            vertices.push(`S${span.uuid()} [label="${label}",color="${color}",shape="box",width="${width}"];`);
 
             _.each(span._tags, (val, key) => {
                 if (!key.match(/^join:/)) {

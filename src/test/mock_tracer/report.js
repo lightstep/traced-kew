@@ -11,10 +11,19 @@ export default class Report {
         this.debugSpans = [];
 
         this.unfinishedSpans = [];
+        this.minStartMs = undefined;
+        this.maxFinishMs = undefined;
 
         _.each(spans, (span) => {
             if (span._finishMs === 0) {
                 this.unfinishedSpans.push(span);
+            }
+
+            if (!(this.minStartMs < span._startMs)) {
+                this.minStartMs = span._startMs;
+            }
+            if (!(this.maxFinishMs > span._finishMs)) {
+                this.maxFinishMs = span._finishMs;
             }
 
             this.spansByUUID[span.uuid()] = span;

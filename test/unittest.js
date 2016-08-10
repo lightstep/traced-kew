@@ -557,6 +557,7 @@ describe('Traced API', function() {
                         .then(() => Q.delay(4))
                 })
                 .then(() => {
+                    mockTracerImp.generateDotFile('temp/temp.dot');
                     done();
                 })
                 .fail((err) => {
